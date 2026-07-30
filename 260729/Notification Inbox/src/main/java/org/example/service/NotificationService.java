@@ -17,10 +17,10 @@ public class NotificationService {
     }
 
     public Boolean deliver(String userId, String notificationId, String message) {
-        Notification notification = new Notification(message, NoticiationStatus.UNREAD);
+        Notification notification = new Notification(message, NoticiationStatus.UNREAD, notificationId);
 
         if(!User2Notifications.containsKey(userId)){
-            User2Notifications.put(userId, new LinkedHashMap<>(maxMessageNumber, 0.75f, true){
+            User2Notifications.put(userId, new LinkedHashMap<>(maxMessageNumber, 0.75f, false){
 
                 @Override
                 protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -32,7 +32,8 @@ public class NotificationService {
         LinkedHashMap<String, Notification> notificationMap = User2Notifications.get(userId);
         if(notificationMap.containsKey(notificationId)){
             if(message.equals(notificationMap.get(notificationId).message())){
-                throw new RuntimeException("Duplicate notification.");
+                // Idempotency
+                return true;
             }else{
                 throw new RuntimeException("Same notification id but different message.");
             }
@@ -42,7 +43,7 @@ public class NotificationService {
         return true;
     }
 
-    public ArrayList<Notification> getNotifications(String userId, Integer limit){
+    public List<Notification> getNotifications(String userId, Integer limit){
         if(limit<0){
             throw new RuntimeException("Invalid limit");
         }
@@ -56,11 +57,7 @@ public class NotificationService {
         notificationMap.forEach((k,v) -> notifications.add(v));
         reverse(notifications);
 
-        try{
-            return new ArrayList(notifications.subList(0, Math.min(limit, notifications.size())));
-        } catch(Exception e) {
-            throw new RuntimeException(String.format("Casting error, original error: %s", e.toString()), e);
-        }
+        return new ArrayList<>(notifications.subList(0, Math.min(limit, notifications.size())));
     }
 
     public Boolean markAsRead(String userId, String notificationId){
@@ -74,9 +71,10 @@ public class NotificationService {
 
         Notification notification = notificationMap.get(notificationId);
         if(notification.noticiationStatus().equals(NoticiationStatus.READ)){
-            throw new RuntimeException("Notification already read.");
+            // Idempotency
+            return true;
         }else{
-            notificationMap.put(notificationId, new Notification(notification.message(), NoticiationStatus.READ));
+            notificationMap.put(notificationId, new Notification(notification.message(), NoticiationStatus.READ, notificationId));
         }
         return true;
     }
