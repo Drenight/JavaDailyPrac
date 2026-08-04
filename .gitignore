@@ -1,0 +1,23 @@
+# Maven
+target/
+*.class
+*.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Archives generated for submission/sharing
+*.zip
+
+# Local nested Git metadata backups
+.git-backup/
