@@ -30,7 +30,7 @@ public class ExpiringKeyValueStore {
 
     //2. W data w/ ttl; store.put("verification-code", "123456", Duration.ofSeconds(30));
     public Boolean put(String key, String value, Duration duration) {
-        if(duration.isNegative()){
+        if (duration.isNegative() || duration.isZero()) {
             return false;
         }
         Instant now = Instant.now(clock);
@@ -79,7 +79,7 @@ public class ExpiringKeyValueStore {
     private void cleanInvalidTillTopValid(Instant now) {
         while (pq.size() != 0) {
             Entry top = pq.poll();
-            if (!mp.containsKey(top.key()) || top.exprTime() != mp.get(top.key()).exprTime()) {
+            if (!mp.containsKey(top.key()) || top != mp.get(top.key())) {
                 //out sync scenario, remove derive
                 continue;
             } else if (now.isAfter(top.exprTime()) || now.equals(top.exprTime())) {
