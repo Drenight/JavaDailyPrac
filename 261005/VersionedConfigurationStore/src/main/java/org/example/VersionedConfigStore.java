@@ -114,6 +114,6 @@ public class VersionedConfigStore {
         );
         nowSubMap.put(nxtVersion, newConfigVersion);
         mp.put(key, nowSubMap);
-        return oldConfigVersion;
+        return newConfigVersion;
     }
 }
