@@ -9,7 +9,7 @@ public class VersionedConfigStore {
 
     HashMap<String, HashMap<Long, ConfigVersion>> mp;
 
-    void init() {
+    public VersionedConfigStore() {
         mp = new HashMap<>();
     }
 
@@ -17,7 +17,7 @@ public class VersionedConfigStore {
         if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("Invalid key is passed");
         }
-        if (value == null || value.isBlank()) {
+        if (value == null) {
             throw new IllegalArgumentException("Invalid value is passed");
         }
     }
@@ -36,15 +36,7 @@ public class VersionedConfigStore {
             newSubMap.put(1l, newConfigVersion);
             mp.put(key, newSubMap);
         } else {
-            HashMap<Long, ConfigVersion> nowSubMap = mp.get(key);
-            long nowVersion = nowSubMap.size();
-            newConfigVersion = new ConfigVersion(
-                    key,
-                    value,
-                    nowVersion + 1
-            );
-            nowSubMap.put(nowVersion + 1, newConfigVersion);
-            mp.put(key, nowSubMap);
+            throw new IllegalStateException("Same key is already set, use update instead");
         }
 
         return newConfigVersion;
@@ -88,6 +80,9 @@ public class VersionedConfigStore {
             throw new IllegalArgumentException("version is not allowed to be <=0");
         }
         HashMap<Long, ConfigVersion> nowSubMap = mp.get(key);
+        if (!nowSubMap.containsKey(version)) {
+            throw new IllegalStateException("Not existed version queried");
+        }
         ConfigVersion nowConfigVersion = nowSubMap.get(version);
         return nowConfigVersion;
     }
@@ -97,8 +92,8 @@ public class VersionedConfigStore {
         if (!mp.containsKey(key)) {
             throw new IllegalArgumentException("Not existed key is passed");
         }
-        if (targetVersion >= expectedVersion) {
-            throw new IllegalArgumentException("targetVersion is not allowed to be >= expectedVersion");
+        if (targetVersion > expectedVersion) {
+            throw new IllegalArgumentException("targetVersion is not allowed to be > expectedVersion");
         }
         if (targetVersion <= 0) {
             throw new IllegalArgumentException("targetVersion is not allowed to be <=0");
@@ -112,7 +107,12 @@ public class VersionedConfigStore {
         }
         long nxtVersion = nowSubMap.size() + 1;
         ConfigVersion oldConfigVersion = nowSubMap.get(targetVersion);
-        nowSubMap.put(nxtVersion, oldConfigVersion);
+        ConfigVersion newConfigVersion = new ConfigVersion(
+                key,
+                oldConfigVersion.value(),
+                nxtVersion
+        );
+        nowSubMap.put(nxtVersion, newConfigVersion);
         mp.put(key, nowSubMap);
         return oldConfigVersion;
     }
